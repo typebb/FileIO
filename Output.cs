@@ -17,9 +17,9 @@ namespace FileIO
         {
             Directory.CreateDirectory(Path.Combine(OutputFolder, naam));
         }
-        public void WriteOutputToFile(string foldernaam, List<string> output)
+        public void WriteOutputToFile(string foldernaam, List<string> output, string soort)
         {
-            string path = Path.Combine(OutputFolder, foldernaam, $"Analyse{foldernaam}");
+            string path = Path.Combine(OutputFolder, foldernaam, $"{soort}{foldernaam}");
             File.AppendAllLines(path, output);
         }
     }

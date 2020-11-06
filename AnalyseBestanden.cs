@@ -25,7 +25,7 @@ namespace FileIO
                 {
                     List<string> output = new List<string>();
                     Analyseer(f, ref output);
-                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
+                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output, "Analyse");
                 }
             }
         }
