@@ -19,14 +19,13 @@ namespace FileIO
         }
         public void IterateFilesAndAnalyse(string folderPath)
         {
-            
             foreach (string f in Directory.GetFiles(folderPath))
             {
                 if (f.Contains(".cs"))
                 {
                     List<string> output = new List<string>();
                     Analyseer(f, ref output);
-                    Output.WriteOutputToFile(folderPath, Path.GetFileNameWithoutExtension(f), output);
+                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
@@ -40,6 +39,7 @@ namespace FileIO
                 CodeTeller(s, ref tellerLijnenCode);
                 CheckStringAndAddToList(s, ref output);
             }
+            output.Add($"aantal lijnen code: {tellerLijnenCode}");
         }
         public void CheckStringAndAddToList(string s, ref List<string> output)
         {

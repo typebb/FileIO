@@ -17,11 +17,10 @@ namespace FileIO
         {
             Directory.CreateDirectory(Path.Combine(OutputFolder, naam));
         }
-        public void WriteOutputToFile(string foldernaam, string filenaam, List<string> output)
+        public void WriteOutputToFile(string foldernaam, List<string> output)
         {
-            string path = Path.Combine(OutputFolder, foldernaam, filenaam, "Analyse");
-            if (!File.Exists(path))
-                File.WriteAllLines(path, output);
+            string path = Path.Combine(OutputFolder, foldernaam, $"Analyse{foldernaam}");
+            File.AppendAllLines(path, output);
         }
     }
 }
