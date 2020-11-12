@@ -10,7 +10,7 @@ namespace FileIO
         public string OutputFolder { get; set; }
         public Output()
         {
-            OutputFolder = Path.Combine(Directory.GetCurrentDirectory().Remove(Directory.GetCurrentDirectory().IndexOf("FileIO") + 6), "Output");
+            OutputFolder = Path.Combine(Directory.GetCurrentDirectory().Remove(Directory.GetCurrentDirectory().LastIndexOf("FileIO") + 6), "Output");
             Directory.CreateDirectory(OutputFolder);
         }
         public void CreateNewDirectory(string naam)

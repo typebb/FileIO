@@ -13,7 +13,7 @@ namespace FileIO
         public string[] UitgepaktZipFolders { get; set; }
         public Input()
         {
-            InputFolder = Path.Combine(Directory.GetCurrentDirectory().Remove(Directory.GetCurrentDirectory().IndexOf("FileIO") + 6), "Input");
+            InputFolder = Path.Combine(Directory.GetCurrentDirectory().Remove(Directory.GetCurrentDirectory().LastIndexOf("FileIO") + 6), "Input");
             Directory.CreateDirectory(InputFolder);
             InputFiles = Directory.GetFiles(InputFolder);
             ExtractZipFiles();
