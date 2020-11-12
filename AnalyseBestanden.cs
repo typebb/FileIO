@@ -67,7 +67,7 @@ namespace FileIO
         }
         public void CodeTeller(string s, ref int teller)
         {
-            if (s.Length > 2)
+            if (s.Trim().Length > 0)
                 teller++;
         }
     }

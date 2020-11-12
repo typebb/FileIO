@@ -28,6 +28,7 @@ namespace FileIO
                 {
                     List<string> output = new List<string>();
                     Analyseer(f, ref output);
+                    output.Add("_______________________");
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output, "ClassInfo");
                 }
             }
@@ -45,7 +46,7 @@ namespace FileIO
             {
                 UsingAdder(s, ref output);
                 NamespaceAdder(s, ref output, ref namespaceLocation);
-                ClassAdder(s, ref output, ref namespaceLocation);
+                ClassAdder(s, ref output, namespaceLocation);
                 InheritAdder(s, ref output);
                 MethodAdder(s, ref output);
                 PropertyAdder(s, ref output);
@@ -54,32 +55,32 @@ namespace FileIO
         }
         public void UsingAdder(string s, ref List<string> output)
         {
-            if (s.Contains("using"))
-                output.Add($"using : {s.IndexOf("using" + 6)}");
+            if (s.Contains("using "))
+                output.Add($"using : {s.Substring(s.IndexOf("using" + 6, Math.Abs(s.IndexOf("using") + 5 - s.IndexOf(";")) - 1))}");
         }
         public void NamespaceAdder(string s, ref List<string> output, ref int namespaceLocation)
         {
-            if (s.Contains("namespace"))
+            if (s.Contains("namespace "))
             {
                 s = s.Substring(s.IndexOf("namespace") + 10);
                 output.Add(s);
                 namespaceLocation = output.Count - 1;
             }
         }
-        public void ClassAdder(string s, ref List<string> output, ref int namespaceLocation)
+        public void ClassAdder(string s, ref List<string> output, int namespaceLocation)
         {
-            if (s.Contains("class"))
+            if (s.Contains(" class "))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
+                    s = s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
                 else
                     s = s.Substring(s.IndexOf("class") + 6);
                 output[namespaceLocation] += $", {s}";
             }
-            else if (s.Contains("interface"))
+            else if (s.Contains(" interface "))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
+                    s = s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
                 else
                     s = s.Substring(s.IndexOf("interface") + 10);
                 output[namespaceLocation] += $", {s}";
@@ -87,7 +88,7 @@ namespace FileIO
         }
         public void InheritAdder(string s, ref List<string> output)
         {
-            if (s.Contains("class") || s.Contains("interface"))
+            if (s.Contains(" class ") || s.Contains(" interface "))
             {
                 if (s.Contains(":"))
                 {
@@ -98,12 +99,15 @@ namespace FileIO
         }
         public void MethodAdder(string s, ref List<string> output)
         {
-            if (!MethodCheckWithImplementation(s, ref output))
+            if (s.Contains("(") && s.Contains(")"))
             {
-                if ((s.Contains("(") || s.Contains(")")) && !s.Contains("{"))
-                    output.Add($"method : {s.Substring(s.LastIndexOf(" "))}");
-                else if ((s.Contains("(") || s.Contains(")")) && s.Contains(";"))
-                    output.Add($"method : {s.Substring(s.LastIndexOf(" "), Math.Abs(s.LastIndexOf(" ") - s.IndexOf(";")))}");
+                foreach (string d in dataTypes)
+                {
+                    if (s.Contains(d))
+                    {
+                        output.Add($"method : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(")) - 1)}");
+                    }
+                }
             }
         }
         public void PropertyAdder(string s, ref List<string> output)
@@ -139,22 +143,6 @@ namespace FileIO
                         dataTypes.Add(s.Substring(s.IndexOf("class") + 6));
                 }
             }
-        }
-        public bool MethodCheckWithImplementation(string s, ref List<string> output)
-        {
-            if ((s.Contains("(") || s.Contains(")")) && s.Contains("{"))
-            {
-                foreach(string d in dataTypes)
-                {
-                    if (s.Contains(d))
-                    {
-                        output.Add($"method : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(")) - 1)}");
-                        return true;
-                    }
-
-                }
-            }
-            return false;
         }
     }
 }
