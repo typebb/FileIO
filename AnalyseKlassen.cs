@@ -69,7 +69,7 @@ namespace FileIO
         }
         public void ClassAdder(string s, ref List<string> output, int namespaceLocation)
         {
-            if (s.Contains(" class "))
+            if (s.Contains("class "))
             {
                 if (s.Contains(":"))
                     s = s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
@@ -77,7 +77,7 @@ namespace FileIO
                     s = s.Substring(s.IndexOf("class") + 6);
                 output[namespaceLocation] += $", {s}";
             }
-            else if (s.Contains(" interface "))
+            else if (s.Contains("interface "))
             {
                 if (s.Contains(":"))
                     s = s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
@@ -88,7 +88,7 @@ namespace FileIO
         }
         public void InheritAdder(string s, ref List<string> output)
         {
-            if (s.Contains(" class ") || s.Contains(" interface "))
+            if (s.Contains("class ") || s.Contains("interface "))
             {
                 if (s.Contains(":"))
                 {
@@ -135,7 +135,7 @@ namespace FileIO
         {
             foreach (string s in lines)
             {
-                if (s.Contains("class") && !s.Contains("abstract"))
+                if (s.Contains("class ") && !s.Contains("abstract "))
                 {
                     if (s.Contains(":"))
                         dataTypes.Add(s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 6 - s.IndexOf(":")) - 1));

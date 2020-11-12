@@ -43,12 +43,12 @@ namespace FileIO
         }
         public void CheckStringAndAddToList(string s, ref List<string> output)
         {
-            if (s.Contains("namespace") || s.Contains("interface"))
+            if (s.Contains("namespace ") || s.Contains("interface "))
             {
                 s.Insert(9, ":");
                 output.Add(s);
             }
-            if (s.Contains("class"))
+            if (s.Contains("class "))
             {
                 if (s.Contains(":"))
                     s = s.Substring(s.IndexOf("class"), Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
