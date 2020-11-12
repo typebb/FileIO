@@ -51,7 +51,7 @@ namespace FileIO
             if (s.Contains("class"))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("class"), Math.Abs(s.IndexOf("class") - s.IndexOf(":") - 1));
+                    s = s.Substring(s.IndexOf("class"), Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
                 else
                     s = s.Substring(s.IndexOf("class"));
                 s.Insert(5, ":");

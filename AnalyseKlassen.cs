@@ -71,7 +71,7 @@ namespace FileIO
             if (s.Contains("class"))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") - s.IndexOf(":") - 1));
+                    s = s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
                 else
                     s = s.Substring(s.IndexOf("class") + 6);
                 output[namespaceLocation] += $", {s}";
@@ -79,7 +79,7 @@ namespace FileIO
             else if (s.Contains("interface"))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("class") - s.IndexOf(":") - 1));
+                    s = s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
                 else
                     s = s.Substring(s.IndexOf("interface") + 10);
                 output[namespaceLocation] += $", {s}";
@@ -98,11 +98,13 @@ namespace FileIO
         }
         public void MethodAdder(string s, ref List<string> output)
         {
-            MethodCheckWithImplementation(s, ref output);
-            if ((s.Contains("(") || s.Contains(")")) && !s.Contains("{"))
-                output.Add($"method : {s.Substring(s.LastIndexOf(" "))}");
-            else if ((s.Contains("(") || s.Contains(")")) && s.Contains(";"))
+            if (!MethodCheckWithImplementation(s, ref output))
+            {
+                if ((s.Contains("(") || s.Contains(")")) && !s.Contains("{"))
+                    output.Add($"method : {s.Substring(s.LastIndexOf(" "))}");
+                else if ((s.Contains("(") || s.Contains(")")) && s.Contains(";"))
                     output.Add($"method : {s.Substring(s.LastIndexOf(" "), Math.Abs(s.LastIndexOf(" ") - s.IndexOf(";")))}");
+            }
         }
         public void PropertyAdder(string s, ref List<string> output)
         {
@@ -111,7 +113,7 @@ namespace FileIO
                 foreach (string d in dataTypes)
                 {
                     if (s.Contains(d))
-                        output.Add($"property : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("{") - 2))}");
+                        output.Add($"property : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("{")) - 2)}");
                 }
             }
         }
@@ -120,9 +122,9 @@ namespace FileIO
             foreach (string d in dataTypes)
             {
                 if ((s.Contains(d) && s.Contains("=")) && (!s.Contains("get") || !s.Contains("set")))
-                    output.Add($"variable : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("=") - 2))}");
-                else if (s.Contains(d) && (!s.Contains("get") || !s.Contains("set")))
-                    output.Add($"variable : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf(";") - 1))}");
+                    output.Add($"variable : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("=")) - 2)}");
+                else if ((s.Contains(d) && s.Contains(";")) && (!s.Contains("get") || !s.Contains("set")))
+                    output.Add($"variable : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf(";")) - 1)}");
             }
         }
         public void ClassAsDataTypeAdder(string[] lines)
@@ -132,23 +134,27 @@ namespace FileIO
                 if (s.Contains("class") && !s.Contains("abstract"))
                 {
                     if (s.Contains(":"))
-                        dataTypes.Add(s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 6 - s.IndexOf(":") - 1)));
+                        dataTypes.Add(s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 6 - s.IndexOf(":")) - 1));
                     else
                         dataTypes.Add(s.Substring(s.IndexOf("class") + 6));
                 }
             }
         }
-        public void MethodCheckWithImplementation(string s, ref List<string> output)
+        public bool MethodCheckWithImplementation(string s, ref List<string> output)
         {
             if ((s.Contains("(") || s.Contains(")")) && s.Contains("{"))
             {
                 foreach(string d in dataTypes)
                 {
                     if (s.Contains(d))
-                        output.Add($"method : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(") + 2))}");
+                    {
+                        output.Add($"method : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(")) - 1)}");
+                        return true;
+                    }
+
                 }
             }
-
+            return false;
         }
     }
 }
