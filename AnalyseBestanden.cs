@@ -62,7 +62,7 @@ namespace FileIO
         {
             if (teller > 1)
                 throw new Exception("Meer dan 1 klasse in de klasse file.");
-            if (s.Contains("class") || s.Contains("interface"))
+            if (s.Contains("class ") || s.Contains("interface "))
                 teller++;
         }
         public void CodeTeller(string s, ref int teller)
