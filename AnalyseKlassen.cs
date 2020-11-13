@@ -56,7 +56,7 @@ namespace FileIO
         public void UsingAdder(string s, ref List<string> output)
         {
             if (s.Contains("using "))
-                output.Add($"using : {s.Substring(s.IndexOf("using" + 6, Math.Abs(s.IndexOf("using") + 5 - s.IndexOf(";")) - 1))}");
+                output.Add($"using : {s.Substring(s.IndexOf("using") + 6, Math.Abs(s.IndexOf("using") + 5 - s.IndexOf(";")) - 1)}");
         }
         public void NamespaceAdder(string s, ref List<string> output, ref int namespaceLocation)
         {
