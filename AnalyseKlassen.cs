@@ -9,6 +9,7 @@ namespace FileIO
     public class AnalyseKlassen
     {
         public List<string> dataTypes = new List<string> { "void", "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
+        public List<string> classDataTypes = new List<string>();
         public Input Input { get; set; }
         public Output Output { get; set; }
         public void IterateFoldersAndFiles()
@@ -21,128 +22,157 @@ namespace FileIO
         }
         public void IterateFilesAndAnalyse(string folderPath)
         {
-
+            ClassAsDataTypeAdder(folderPath);
             foreach (string f in Directory.GetFiles(folderPath))
             {
                 if (f.Contains(".cs"))
                 {
-                    List<string> output = new List<string>();
-                    Analyseer(f, ref output);
-                    output.Add("_______________________");
+                    List<ClassInfo> output = new List<ClassInfo>();
+                    CheckStringsAndAnalyse(File.ReadAllLines(f), output);
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output, "ClassInfo");
                 }
             }
         }
-        public void Analyseer(string path, ref List<string> output)
+        public void CheckStringsAndAnalyse(string[] allLines, List<ClassInfo> outputList)
         {
-            string[] allLines = File.ReadAllLines(path);
-            ClassAsDataTypeAdder(allLines);
-            CheckStringsAndAddToList(allLines, ref output);
-        }
-        public void CheckStringsAndAddToList(string[] allLines, ref List<string> output)
-        {
-            int namespaceLocation = 0;
+            ClassInfo output = new ClassInfo();
             foreach (string s in allLines)
             {
-                UsingAdder(s, ref output);
-                NamespaceAdder(s, ref output, ref namespaceLocation);
-                ClassAdder(s, ref output, namespaceLocation);
-                InheritAdder(s, ref output);
-                MethodAdder(s, ref output);
-                PropertyAdder(s, ref output);
-                VariableAdder(s, ref output);
+                if (UsingAdder(s) != null) output.Usings.Add(UsingAdder(s));
+                if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
+                if (ClassAdder(s) != null) output.Name = ClassAdder(s);
+                if (InheritAdder(s) != null) output.Inherits.Add(InheritAdder(s));
+                if (ConstructorAdder(s, output) != null) output.Constructors.Add(ConstructorAdder(s, output));
+                if (MethodAdder(s) != null) output.Methods.Add(MethodAdder(s));
+                if (PropertyAdder(s) != null) output.Properties.Add(PropertyAdder(s));
+                if (VariableAdder(s) != null) output.Variables.Add(VariableAdder(s));
             }
+            outputList.Add(output);
         }
-        public void UsingAdder(string s, ref List<string> output)
+        public string UsingAdder(string s)
         {
             if (s.Contains("using "))
-                output.Add($"using : {s.Substring(s.IndexOf("using") + 6, Math.Abs(s.IndexOf("using") + 5 - s.IndexOf(";")) - 1)}");
+                return s.Substring(s.IndexOf("using") + 6, Math.Abs(s.IndexOf("using") + 5 - s.IndexOf(";")) - 1);
+            return null;
         }
-        public void NamespaceAdder(string s, ref List<string> output, ref int namespaceLocation)
+        public string NamespaceAdder(string s)
         {
             if (s.Contains("namespace "))
-            {
-                s = s.Substring(s.IndexOf("namespace") + 10);
-                output.Add(s);
-                namespaceLocation = output.Count - 1;
-            }
+                return s.Substring(s.IndexOf("namespace") + 10);
+            return null;
         }
-        public void ClassAdder(string s, ref List<string> output, int namespaceLocation)
+        public string ClassAdder(string s)
         {
             if (s.Contains("class "))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
+                    return s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
                 else
-                    s = s.Substring(s.IndexOf("class") + 6);
-                output[namespaceLocation] += $", {s}";
+                    return s.Substring(s.IndexOf("class") + 6);
             }
             else if (s.Contains("interface "))
             {
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
+                    return s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
                 else
-                    s = s.Substring(s.IndexOf("interface") + 10);
-                output[namespaceLocation] += $", {s}";
+                    return s.Substring(s.IndexOf("interface") + 10);
             }
+            return null;
         }
-        public void InheritAdder(string s, ref List<string> output)
+        public string InheritAdder(string s)
         {
             if (s.Contains("class ") || s.Contains("interface "))
             {
                 if (s.Contains(":"))
-                {
-                    s = $"inherit : {s.Substring(s.IndexOf(":") + 2)}";
-                    output.Add(s);
-                }
+                    return s.Substring(s.IndexOf(":") + 2);
             }
+            return null;
         }
-        public void MethodAdder(string s, ref List<string> output)
+        public string MethodAdder(string s)
         {
             if (s.Contains("(") && s.Contains(")"))
             {
                 foreach (string d in dataTypes)
                 {
                     if (s.Contains(d))
-                    {
-                        output.Add($"method : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(")) - 1)}");
-                    }
+                        return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(")) - 1);
+                }
+                foreach (string c in classDataTypes)
+                {
+                    var methodNaam = s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf("(")) - 1);
+                    if (s.Contains(c) && methodNaam != c)
+                        return methodNaam;
                 }
             }
+            return null;
         }
-        public void PropertyAdder(string s, ref List<string> output)
+        public string ConstructorAdder(string s, ClassInfo output)
+        {
+            if (s.Contains("(") && s.Contains(")"))
+            {
+                if (s.Contains(output.Name))
+                {
+                    var constructorNaam = s.Substring(s.IndexOf(output.Name) + output.Name.Length + 1, Math.Abs(s.IndexOf(output.Name) + output.Name.Length - s.IndexOf("(")) - 1);
+                    if (constructorNaam == output.Name)
+                        return constructorNaam;
+                }
+            }
+            return null;
+        }
+        public string PropertyAdder(string s)
         {
             if (s.Contains("get") || s.Contains("set"))
             {
                 foreach (string d in dataTypes)
                 {
                     if (s.Contains(d))
-                        output.Add($"property : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("{")) - 2)}");
+                        return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("{")) - 2);
+                }
+                foreach (string c in classDataTypes)
+                {
+                    if (s.Contains(c))
+                        return s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf("{")) - 2);
                 }
             }
+            return null;
         }
-        public void VariableAdder(string s, ref List<string> output)
+        public string VariableAdder(string s)
         {
             foreach (string d in dataTypes)
             {
                 if ((s.Contains(d) && s.Contains("=")) && (!s.Contains("get") || !s.Contains("set")))
-                    output.Add($"variable : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("=")) - 2)}");
+                    return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("=")) - 2);
                 else if ((s.Contains(d) && s.Contains(";")) && (!s.Contains("get") || !s.Contains("set")))
-                    output.Add($"variable : {s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf(";")) - 1)}");
+                    return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf(";")) - 1);
             }
-        }
-        public void ClassAsDataTypeAdder(string[] lines)
-        {
-            foreach (string s in lines)
+            foreach (string c in classDataTypes)
             {
-                if (s.Contains("class ") && !s.Contains("abstract "))
+                if ((s.Contains(c) && s.Contains("=")) && (!s.Contains("get") || !s.Contains("set")))
+                    return s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf("=")) - 2);
+                else if ((s.Contains(c) && s.Contains(";")) && (!s.Contains("get") || !s.Contains("set")))
+                    return s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf(";")) - 1);
+            }
+            return null;
+        }
+        public void ClassAsDataTypeAdder(string folderPath)
+        {
+            foreach (string f in Directory.GetFiles(folderPath))
+            {
+                if (f.Contains(".cs"))
                 {
-                    if (s.Contains(":"))
-                        dataTypes.Add(s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 6 - s.IndexOf(":")) - 1));
-                    else
-                        dataTypes.Add(s.Substring(s.IndexOf("class") + 6));
+                    foreach (string s in File.ReadLines(f))
+                    {
+                        if (s.Contains("class ") && !s.Contains("abstract "))
+                        {
+                            if (s.Contains(":"))
+                                classDataTypes.Add(s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 6 - s.IndexOf(":")) - 1));
+                            else
+                                classDataTypes.Add(s.Substring(s.IndexOf("class") + 6));
+                        }
+                    }
                 }
             }
+
         }
     }
 }
