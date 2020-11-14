@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace FileIO
 {
@@ -10,8 +8,8 @@ namespace FileIO
     {
         public List<string> dataTypes = new List<string> { "void", "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
         public List<string> classDataTypes = new List<string>();
-        public Input Input { get; set; }
-        public Output Output { get; set; }
+        public Input Input { get; set; } = new Input();
+        public OutputClass Output { get; set; } = new OutputClass();
         public void IterateFoldersAndFiles()
         {
             foreach (string f in Input.UitgepaktZipFolders)
@@ -27,13 +25,12 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    List<ClassInfo> output = new List<ClassInfo>();
-                    CheckStringsAndAnalyse(File.ReadAllLines(f), output);
-                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output, "ClassInfo");
+                    ClassInfo output = CheckStringsAndAnalyse(File.ReadAllLines(f));
+                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
-        public void CheckStringsAndAnalyse(string[] allLines, List<ClassInfo> outputList)
+        public ClassInfo CheckStringsAndAnalyse(string[] allLines)
         {
             ClassInfo output = new ClassInfo();
             foreach (string s in allLines)
@@ -47,7 +44,7 @@ namespace FileIO
                 if (PropertyAdder(s) != null) output.Properties.Add(PropertyAdder(s));
                 if (VariableAdder(s) != null) output.Variables.Add(VariableAdder(s));
             }
-            outputList.Add(output);
+            return output;
         }
         public string UsingAdder(string s)
         {

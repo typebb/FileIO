@@ -24,7 +24,7 @@ namespace FileIO
             foreach (string s in Methods) returnString.Append($"Method : {s}\n");
             foreach (string s in Properties) returnString.Append($"Property : {s}\n");
             foreach (string s in Variables) returnString.Append($"Variable : {s}\n");
-            returnString.Append("_______________________");
+            returnString.Append("_______________________\n");
             return returnString.ToString();
         }
         public void Show()

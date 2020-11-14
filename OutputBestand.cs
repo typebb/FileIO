@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
 namespace FileIO
 {
-    public class Output
+    public class OutputBestand
     {
         public string OutputFolder { get; set; }
-        public Output()
+        public OutputBestand()
         {
             OutputFolder = Path.Combine(Directory.GetCurrentDirectory().Remove(Directory.GetCurrentDirectory().LastIndexOf("FileIO") + 6), "Output");
             Directory.CreateDirectory(OutputFolder);
@@ -17,11 +14,10 @@ namespace FileIO
         {
             Directory.CreateDirectory(Path.Combine(OutputFolder, naam));
         }
-        public void WriteOutputToFile(string foldernaam, List<ClassInfo> output, string soort)
+        public void WriteOutputToFile(string foldernaam, BestandInfo output)
         {
-            string path = Path.Combine(OutputFolder, foldernaam, $"{soort}{foldernaam}");
-            foreach(ClassInfo c in output)
-            File.AppendAllText(path, c.ToString());
+            string path = Path.Combine(OutputFolder, foldernaam, $"Analyse{foldernaam}");
+            File.AppendAllText(path, output.ToString());
         }
     }
 }

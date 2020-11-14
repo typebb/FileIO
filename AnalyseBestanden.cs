@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 
 namespace FileIO
 {
     public class AnalyseBestanden
     {
-        public Input Input { get; set; }
-        public Output Output { get; set; }
+        public Input Input { get; set; } = new Input();
+        public OutputBestand Output { get; set; } = new OutputBestand();
         public void IterateFoldersAndFiles()
         {
             foreach (string f in Input.UitgepaktZipFolders)
@@ -23,40 +21,65 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    List<string> output = new List<string>();
-                    Analyseer(f, ref output);
-                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output, "Analyse");
+                    BestandInfo output = new BestandInfo();
+                    CheckStringsAndAnalyse(f);
+                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
-        public void Analyseer(string path, ref List<string> output)
+        public BestandInfo CheckStringsAndAnalyse(string path)
         {
+            BestandInfo output = new BestandInfo();
             int tellerKlassen = 0;
             int tellerLijnenCode = 0;
             foreach (string s in File.ReadLines(path))
             {
                 KlassenTeller(s, ref tellerKlassen);
                 CodeTeller(s, ref tellerLijnenCode);
-                CheckStringAndAddToList(s, ref output);
+                if (ClassAdder(s, output) != null) output.Name = ClassAdder(s, output);
+                if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
+                //CheckStringAndAddToList(s);
             }
-            output.Add($"aantal lijnen code: {tellerLijnenCode}");
+            output.AantalLijnenCode = tellerLijnenCode;
+            return output;
         }
-        public void CheckStringAndAddToList(string s, ref List<string> output)
+        public string NamespaceAdder(string s)
         {
-            if (s.Contains("namespace ") || s.Contains("interface "))
-            {
-                s.Insert(9, ":");
-                output.Add(s);
-            }
+            if (s.Contains("namespace "))
+                return s.Substring(s.IndexOf("namespace") + 10);
+            return null;
+        }
+        public string ClassAdder(string s, BestandInfo output)
+        {
             if (s.Contains("class "))
             {
+                TypeOffClass(s, output);
                 if (s.Contains(":"))
-                    s = s.Substring(s.IndexOf("class"), Math.Abs(s.IndexOf("class") - s.IndexOf(":")) - 1);
+                    return s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
                 else
-                    s = s.Substring(s.IndexOf("class"));
-                s.Insert(5, ":");
-                output.Add(s);
+                    return s.Substring(s.IndexOf("class") + 6);
             }
+            else if (s.Contains("interface "))
+            {
+                TypeOffClass(s, output);
+                if (s.Contains(":"))
+                    return s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
+                else
+                    return s.Substring(s.IndexOf("interface") + 10);
+            }
+            return null;
+        }
+        public void TypeOffClass(string s, BestandInfo output)
+        {
+            if (s.Contains("class "))
+            {
+                if (s.Contains("abstract "))
+                    output.TypeOfClass = "abstract";
+                else
+                    output.TypeOfClass = "class";
+            }
+            if (s.Contains("interface "))
+                output.TypeOfClass = "interface";
         }
         public void KlassenTeller(string s, ref int teller)
         {
