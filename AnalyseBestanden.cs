@@ -5,6 +5,7 @@ namespace FileIO
 {
     public class AnalyseBestanden
     {
+        public char[] chars = new char[] { ' ', ':', ';', '{', '=' };
         public Input Input { get; set; } = new Input();
         public OutputBestand Output { get; set; } = new OutputBestand();
         public void IterateFoldersAndFiles()
@@ -21,71 +22,61 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    BestandInfo output = new BestandInfo();
-                    CheckStringsAndAnalyse(f);
+                    string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
+                    BestandInfo output = CheckStringsAndAnalyse(code);
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
-        public BestandInfo CheckStringsAndAnalyse(string path)
+        public BestandInfo CheckStringsAndAnalyse(string s)
         {
             BestandInfo output = new BestandInfo();
             int tellerKlassen = 0;
             int tellerLijnenCode = 0;
-            foreach (string s in File.ReadLines(path))
-            {
-                KlassenTeller(s, ref tellerKlassen);
-                CodeTeller(s, ref tellerLijnenCode);
-                if (ClassAdder(s, output) != null) output.Name = ClassAdder(s, output);
-                if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
-                //CheckStringAndAddToList(s);
-            }
+            KlassenTeller(s, ref tellerKlassen);
+            CodeTeller(s, ref tellerLijnenCode);
+            if (ClassAdder(s, output) != null) output.Name = ClassAdder(s, output);
+            if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
             output.AantalLijnenCode = tellerLijnenCode;
             return output;
         }
         public string NamespaceAdder(string s)
         {
             if (s.Contains("namespace "))
-                return s.Substring(s.IndexOf("namespace") + 10);
+                return s.Substring(s.IndexOf("namespace") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
             return null;
         }
         public string ClassAdder(string s, BestandInfo output)
         {
-            if (s.Contains("class "))
+            if (s.Contains(" class "))
             {
                 TypeOffClass(s, output);
-                if (s.Contains(":"))
-                    return s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
-                else
-                    return s.Substring(s.IndexOf("class") + 6);
+                return s.Substring(s.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
             }
-            else if (s.Contains("interface "))
+            else if (s.Contains(" interface "))
             {
                 TypeOffClass(s, output);
-                if (s.Contains(":"))
-                    return s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
-                else
-                    return s.Substring(s.IndexOf("interface") + 10);
+                return s.Substring(s.IndexOf("interface") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             return null;
         }
         public void TypeOffClass(string s, BestandInfo output)
         {
-            if (s.Contains("class "))
+            if (s.Contains(" class "))
             {
                 if (s.Contains("abstract "))
-                    output.TypeOfClass = "abstract";
+                    output.TypeOfClass = "abstract class";
                 else
                     output.TypeOfClass = "class";
             }
-            if (s.Contains("interface "))
+            if (s.Contains(" interface "))
                 output.TypeOfClass = "interface";
         }
         public void KlassenTeller(string s, ref int teller)
         {
             if (teller > 1)
                 throw new Exception("Meer dan 1 klasse in de klasse file.");
-            if (s.Contains("class ") || s.Contains("interface "))
+            if (s.Contains(" class ") || s.Contains(" interface "))
                 teller++;
         }
         public void CodeTeller(string s, ref int teller)

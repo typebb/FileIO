@@ -8,6 +8,7 @@ namespace FileIO
     {
         public List<string> dataTypes = new List<string> { "void", "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
         public List<string> classDataTypes = new List<string>();
+        public char[] chars = new char[] { ' ', ':', ';', '{', '=' };
         public Input Input { get; set; } = new Input();
         public OutputClass Output { get; set; } = new OutputClass();
         public void IterateFoldersAndFiles()
@@ -25,63 +26,55 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    ClassInfo output = CheckStringsAndAnalyse(File.ReadAllLines(f));
+                    string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
+                    ClassInfo output = CheckStringsAndAnalyse(code);
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
-        public ClassInfo CheckStringsAndAnalyse(string[] allLines)
+        public ClassInfo CheckStringsAndAnalyse(string s)
         {
             ClassInfo output = new ClassInfo();
-            foreach (string s in allLines)
-            {
-                if (UsingAdder(s) != null) output.Usings.Add(UsingAdder(s));
-                if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
-                if (ClassAdder(s) != null) output.Name = ClassAdder(s);
-                if (InheritAdder(s) != null) output.Inherits.Add(InheritAdder(s));
-                if (ConstructorAdder(s, output) != null) output.Constructors.Add(ConstructorAdder(s, output));
-                if (MethodAdder(s) != null) output.Methods.Add(MethodAdder(s));
-                if (PropertyAdder(s) != null) output.Properties.Add(PropertyAdder(s));
-                if (VariableAdder(s) != null) output.Variables.Add(VariableAdder(s));
-            }
+            if (UsingAdder(s) != null) output.Usings.Add(UsingAdder(s));
+            if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
+            if (ClassAdder(s) != null) output.Name = ClassAdder(s);
+            if (InheritAdder(s) != null) output.Inherits.Add(InheritAdder(s));
+            if (ConstructorAdder(s, output) != null) output.Constructors.Add(ConstructorAdder(s, output));
+            if (MethodAdder(s) != null) output.Methods.Add(MethodAdder(s));
+            if (PropertyAdder(s) != null) output.Properties.Add(PropertyAdder(s));
+            if (VariableAdder(s) != null) output.Variables.Add(VariableAdder(s));
             return output;
         }
         public string UsingAdder(string s)
         {
             if (s.Contains("using "))
-                return s.Substring(s.IndexOf("using") + 6, Math.Abs(s.IndexOf("using") + 5 - s.IndexOf(";")) - 1);
+                return s.Substring(s.IndexOf("using") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
             return null;
         }
         public string NamespaceAdder(string s)
         {
             if (s.Contains("namespace "))
-                return s.Substring(s.IndexOf("namespace") + 10);
+                return s.Substring(s.IndexOf("namespace") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
             return null;
         }
         public string ClassAdder(string s)
         {
-            if (s.Contains("class "))
+            if (s.Contains(" class "))
             {
-                if (s.Contains(":"))
-                    return s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 5 - s.IndexOf(":")) - 1);
-                else
-                    return s.Substring(s.IndexOf("class") + 6);
+                return s.Substring(s.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
             }
-            else if (s.Contains("interface "))
+            else if (s.Contains(" interface "))
             {
-                if (s.Contains(":"))
-                    return s.Substring(s.IndexOf("interface") + 10, Math.Abs(s.IndexOf("interface") + 9 - s.IndexOf(":")) - 1);
-                else
-                    return s.Substring(s.IndexOf("interface") + 10);
+                return s.Substring(s.IndexOf("interface") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             return null;
         }
         public string InheritAdder(string s)
         {
-            if (s.Contains("class ") || s.Contains("interface "))
+            if (s.Contains(" class ") || s.Contains(" interface "))
             {
                 if (s.Contains(":"))
-                    return s.Substring(s.IndexOf(":") + 2);
+                    return s.Substring(s.IndexOf(":") + 2).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             return null;
         }
@@ -92,11 +85,11 @@ namespace FileIO
                 foreach (string d in dataTypes)
                 {
                     if (s.Contains(d))
-                        return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("(")) - 1);
+                        return s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
                 }
                 foreach (string c in classDataTypes)
                 {
-                    var methodNaam = s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf("(")) - 1);
+                    var methodNaam = s.Substring(s.IndexOf(c) + c.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
                     if (s.Contains(c) && methodNaam != c)
                         return methodNaam;
                 }
@@ -109,7 +102,7 @@ namespace FileIO
             {
                 if (s.Contains(output.Name))
                 {
-                    var constructorNaam = s.Substring(s.IndexOf(output.Name) + output.Name.Length + 1, Math.Abs(s.IndexOf(output.Name) + output.Name.Length - s.IndexOf("(")) - 1);
+                    var constructorNaam = s.Substring(s.IndexOf(output.Name)).Trim().Split(chars, StringSplitOptions.None)[0];
                     if (constructorNaam == output.Name)
                         return constructorNaam;
                 }
@@ -123,12 +116,12 @@ namespace FileIO
                 foreach (string d in dataTypes)
                 {
                     if (s.Contains(d))
-                        return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("{")) - 2);
+                        return s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
                 }
                 foreach (string c in classDataTypes)
                 {
                     if (s.Contains(c))
-                        return s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf("{")) - 2);
+                        return s.Substring(s.IndexOf(c) + c.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
                 }
             }
             return null;
@@ -137,17 +130,13 @@ namespace FileIO
         {
             foreach (string d in dataTypes)
             {
-                if ((s.Contains(d) && s.Contains("=")) && (!s.Contains("get") || !s.Contains("set")))
-                    return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf("=")) - 2);
-                else if ((s.Contains(d) && s.Contains(";")) && (!s.Contains("get") || !s.Contains("set")))
-                    return s.Substring(s.IndexOf(d) + d.Length + 1, Math.Abs(s.IndexOf(d) + d.Length - s.IndexOf(";")) - 1);
+                if (s.Contains(d) && (!s.Contains("get") || !s.Contains("set")))
+                    return s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             foreach (string c in classDataTypes)
             {
-                if ((s.Contains(c) && s.Contains("=")) && (!s.Contains("get") || !s.Contains("set")))
-                    return s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf("=")) - 2);
-                else if ((s.Contains(c) && s.Contains(";")) && (!s.Contains("get") || !s.Contains("set")))
-                    return s.Substring(s.IndexOf(c) + c.Length + 1, Math.Abs(s.IndexOf(c) + c.Length - s.IndexOf(";")) - 1);
+                if (s.Contains(c) && (!s.Contains("get") || !s.Contains("set")))
+                    return s.Substring(s.IndexOf(c) + c.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             return null;
         }
@@ -157,19 +146,13 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    foreach (string s in File.ReadLines(f))
+                    string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
+                    if (code.Contains(" class ") && !code.Contains(" abstract "))
                     {
-                        if (s.Contains("class ") && !s.Contains("abstract "))
-                        {
-                            if (s.Contains(":"))
-                                classDataTypes.Add(s.Substring(s.IndexOf("class") + 6, Math.Abs(s.IndexOf("class") + 6 - s.IndexOf(":")) - 1));
-                            else
-                                classDataTypes.Add(s.Substring(s.IndexOf("class") + 6));
-                        }
+                        classDataTypes.Add(code.Substring(code.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0]);
                     }
                 }
             }
-
         }
     }
 }
