@@ -6,9 +6,11 @@ namespace FileIO
 {
     public class AnalyseKlassen
     {
-        public List<string> dataTypes = new List<string> { "void", "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
+        public List<string> dataTypes = new List<string> { "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
+        public List<string> methodReturnTypes = new List<string> { "void", "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
+
         public List<string> classDataTypes = new List<string>();
-        public char[] chars = new char[] { ' ', ':', ';', '{', '=' };
+        public char[] chars = new char[] { ':', ';', '{', '}', '=' };
         public Input Input { get; set; } = new Input();
         public OutputClass Output { get; set; } = new OutputClass();
         public void IterateFoldersAndFiles()
@@ -28,6 +30,7 @@ namespace FileIO
                 {
                     string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
                     ClassInfo output = new ClassInfo();
+                    UsingAdder(code, output);
                     ReadUntilNextMatchingBrace(code, output);
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
@@ -47,11 +50,13 @@ namespace FileIO
                 {
                     nOpen++;
                     code = code.Substring(indexOpen + 1);
+                    CheckStringsAndAnalyse(code, output);
                 }
                 if (indexOpen > indexClose)
                 {
                     nOpen--;
                     code = code.Substring(indexClose + 1);
+                    CheckStringsAndAnalyse(code, output);
                 }
                 CheckStringsAndAnalyse(code, output);
             }
@@ -59,109 +64,146 @@ namespace FileIO
         }
         public void CheckStringsAndAnalyse(string s, ClassInfo output)
         {
-            if (UsingAdder(s) != null) output.Usings.Add(UsingAdder(s));
-            if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
-            if (ClassAdder(s) != null) output.Name = ClassAdder(s);
-            if (InheritAdder(s) != null) output.Inherits.Add(InheritAdder(s));
-            if (ConstructorAdder(s, output) != null) output.Constructors.Add(ConstructorAdder(s, output));
-            if (MethodAdder(s) != null) output.Methods.Add(MethodAdder(s));
-            if (PropertyAdder(s) != null) output.Properties.Add(PropertyAdder(s));
-            if (VariableAdder(s) != null) output.Variables.Add(VariableAdder(s));
+            ClassAdder(s, output);
+            InheritAdder(s, output);
+            ConstructorAdder(s, output);
+            MethodAdder(s, output);
+            PropertyAdder(s, output);
+            VariableAdder(s, output);
         }
-        public string UsingAdder(string s)
+        public void UsingAdder(string s, ClassInfo output)
         {
+            NamespaceAdder(s, output);
             if (s.Contains("using "))
-                return s.Substring(s.IndexOf("using") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
-            return null;
+            {
+                var code = s.Trim().Split(new char[] { '{' }, StringSplitOptions.None);
+                code = code[0].Split(new char[] { ';'}, StringSplitOptions.None);
+                foreach(string u in code)
+                {
+                    if (!u.Contains("namespace"))
+                        output.Usings.Add(u.Substring(s.IndexOf("using") + 6));
+                }
+            }
         }
-        public string NamespaceAdder(string s)
+        public void NamespaceAdder(string s, ClassInfo output)
         {
             if (s.Contains("namespace "))
-                return s.Substring(s.IndexOf("namespace") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
-            return null;
+                output.Namespace = s.Substring(s.IndexOf("namespace") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
         }
-        public string ClassAdder(string s)
+        public void ClassAdder(string s, ClassInfo output)
         {
             if (s.Contains(" class "))
             {
-                return s.Substring(s.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
+                output.Name = s.Substring(s.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             else if (s.Contains(" interface "))
             {
-                return s.Substring(s.IndexOf("interface") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
+                output.Name = s.Substring(s.IndexOf("interface") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
             }
-            return null;
         }
-        public string InheritAdder(string s)
+        public void InheritAdder(string s, ClassInfo output)
         {
             if (s.Contains(" class ") || s.Contains(" interface "))
             {
                 if (s.Contains(":"))
-                    return s.Substring(s.IndexOf(":") + 2).Trim().Split(chars, StringSplitOptions.None)[0];
+                {
+                    var code = s.Substring(s.IndexOf(":") + 2).Trim().Split(chars, StringSplitOptions.None);
+                    code = code[0].Split(new char[] { ',' }, StringSplitOptions.None);
+                    foreach (string i in code)
+                        output.Inherits.Add(i);
+                }
             }
-            return null;
         }
-        public string MethodAdder(string s)
+        public void MethodAdder(string s, ClassInfo output)
         {
             if (s.Contains("(") && s.Contains(")"))
             {
                 foreach (string d in dataTypes)
                 {
-                    if (s.Contains(d))
-                        return s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                    var methodNaam = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                    if (s.Contains(d) && methodNaam.Contains("("))
+                        output.Methods.Add(methodNaam);
                 }
-                foreach (string c in classDataTypes)
+                // check of lukt!!!!!!!!!!!!!!!!!!!!
+                foreach (string d in methodReturnTypes)
                 {
-                    var methodNaam = s.Substring(s.IndexOf(c) + c.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
-                    if (s.Contains(c) && methodNaam != c)
-                        return methodNaam;
+                    var methodNaam = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                    if (s.Contains(d) && methodNaam.Contains("(")) // (!c.Contains($"{c}(") || !c.Contains($"{c} ("))
+                        output.Methods.Add(methodNaam);
                 }
             }
-            return null;
         }
-        public string ConstructorAdder(string s, ClassInfo output)
+        public void ConstructorAdder(string s, ClassInfo output)
         {
             if (s.Contains("(") && s.Contains(")"))
             {
-                if (s.Contains(output.Name))
+                if (s.Contains($"{output.Name}(") || s.Contains($"{output.Name} ("))
                 {
-                    var constructorNaam = s.Substring(s.IndexOf(output.Name)).Trim().Split(chars, StringSplitOptions.None)[0];
-                    if (constructorNaam == output.Name)
-                        return constructorNaam;
+                    var constructorNaam = s.Substring(s.IndexOf(output.Name)).Trim().Split(new char[] { ';', '=', '{', '}' }, StringSplitOptions.None);
+                    foreach (string f in constructorNaam)
+                    {
+                        if (f.Contains(")") && (f.Contains($"{output.Name}(") || f.Contains($"{output.Name} (")))
+                            output.Constructors.Add(f.Trim());
+                    }
                 }
             }
-            return null;
         }
-        public string PropertyAdder(string s)
+        public void PropertyAdder(string s, ClassInfo output)
         {
             if (s.Contains("get") || s.Contains("set"))
             {
                 foreach (string d in dataTypes)
                 {
                     if (s.Contains(d))
-                        return s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                    {
+                        var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
+                        foreach (string c in code)
+                        {
+                            if (c.Contains(d) && (!c.Contains($"({d}") || !c.Contains($"( {d}")) && (!c.Contains($",{d}") || !c.Contains($", {d}")) && (c.Contains("get") || c.Contains("set")))
+                                output.Properties.Add(c.Substring(c.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None)[0]);
+                        }
+                    }
                 }
-                foreach (string c in classDataTypes)
+                foreach (string d in classDataTypes)
                 {
-                    if (s.Contains(c))
-                        return s.Substring(s.IndexOf(c) + c.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                    if (s.Contains(d))
+                    {
+                        var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
+                        foreach (string c in code)
+                        {
+                            if (c.Contains(d) && (!c.Contains($"({d}") || !c.Contains($"( {d}")) && (!c.Contains($",{d}") || !c.Contains($", {d}")) && (c.Contains("get") || c.Contains("set")))
+                                output.Properties.Add(c.Substring(c.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None)[0]);
+                        }
+                    }
                 }
             }
-            return null;
         }
-        public string VariableAdder(string s)
+        public void VariableAdder(string s, ClassInfo output)
         {
             foreach (string d in dataTypes)
             {
-                if (s.Contains(d) && (!s.Contains("get") || !s.Contains("set")))
-                    return s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                if (s.Contains(d))
+                {
+                    var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
+                    foreach(string c in code)
+                    {
+                        if (c.Contains(d) && (!c.Contains($"({d}") || !c.Contains($"( {d}")) && (!c.Contains($",{d}") || !c.Contains($", {d}")) && (!c.Contains("get") || !c.Contains("set")))
+                            output.Variables.Add(c.Substring(c.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None)[0]);
+                    }
+                }
             }
-            foreach (string c in classDataTypes)
+            foreach (string d in classDataTypes)
             {
-                if (s.Contains(c) && (!s.Contains("get") || !s.Contains("set")))
-                    return s.Substring(s.IndexOf(c) + c.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
+                if (s.Contains(d))
+                {
+                    var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
+                    foreach (string c in code)
+                    {
+                        if (c.Contains(d) && !c.Contains("(") && (!c.Contains($"{d}(") || !c.Contains($"{d} (")) && !c.Contains(" class ") && (!c.Contains($"({d}") || !c.Contains($"( {d}")) && (!c.Contains($",{d}") || !c.Contains($", {d}")) && (!c.Contains("get") || !c.Contains("set")))
+                            output.Variables.Add(c.Substring(c.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None)[0]);
+                    }
+                }
             }
-            return null;
         }
         public void ClassAsDataTypeAdder(string folderPath)
         {
