@@ -22,23 +22,30 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
-                    BestandInfo output = CheckStringsAndAnalyse(code);
+                    //string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
+                    BestandInfo output = new BestandInfo();
+                    CheckStringsAndAnalyse(File.ReadAllLines(f), output);
+                    if (output.Name != null && output.Namespace != null)
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
-        public BestandInfo CheckStringsAndAnalyse(string s)
+        public void CheckStringsAndAnalyse(string[] lijnen, BestandInfo output)
         {
-            BestandInfo output = new BestandInfo();
             int tellerKlassen = 0;
             int tellerLijnenCode = 0;
+            foreach (string s in lijnen)
+            {
+                TellerClassesEnLijnen(s, output, ref tellerKlassen, ref tellerLijnenCode);
+                if (ClassAdder(s, output) != null) output.Name = ClassAdder(s, output);
+                if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
+            }
+        }
+        public void TellerClassesEnLijnen(string s, BestandInfo output, ref int tellerKlassen, ref int tellerLijnenCode)
+        {
             KlassenTeller(s, ref tellerKlassen);
             CodeTeller(s, ref tellerLijnenCode);
-            if (ClassAdder(s, output) != null) output.Name = ClassAdder(s, output);
-            if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
             output.AantalLijnenCode = tellerLijnenCode;
-            return output;
         }
         public string NamespaceAdder(string s)
         {

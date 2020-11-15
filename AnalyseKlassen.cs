@@ -27,14 +27,38 @@ namespace FileIO
                 if (f.Contains(".cs"))
                 {
                     string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
-                    ClassInfo output = CheckStringsAndAnalyse(code);
+                    ClassInfo output = new ClassInfo();
+                    ReadUntilNextMatchingBrace(code, output);
                     Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
-        public ClassInfo CheckStringsAndAnalyse(string s)
+        public void ReadUntilNextMatchingBrace(string code, ClassInfo output)
         {
-            ClassInfo output = new ClassInfo();
+            int nOpen = 0;
+            int indexOpen;
+            int indexClose;
+            do
+            {
+                indexOpen = code.IndexOf("{");
+                if (indexOpen == -1) indexOpen = code.Length;
+                indexClose = code.IndexOf("}");
+                if (indexOpen < indexClose)
+                {
+                    nOpen++;
+                    code = code.Substring(indexOpen + 1);
+                }
+                if (indexOpen > indexClose)
+                {
+                    nOpen--;
+                    code = code.Substring(indexClose + 1);
+                }
+                CheckStringsAndAnalyse(code, output);
+            }
+            while (nOpen > 0);
+        }
+        public void CheckStringsAndAnalyse(string s, ClassInfo output)
+        {
             if (UsingAdder(s) != null) output.Usings.Add(UsingAdder(s));
             if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
             if (ClassAdder(s) != null) output.Name = ClassAdder(s);
@@ -43,7 +67,6 @@ namespace FileIO
             if (MethodAdder(s) != null) output.Methods.Add(MethodAdder(s));
             if (PropertyAdder(s) != null) output.Properties.Add(PropertyAdder(s));
             if (VariableAdder(s) != null) output.Variables.Add(VariableAdder(s));
-            return output;
         }
         public string UsingAdder(string s)
         {
