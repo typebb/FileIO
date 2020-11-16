@@ -32,7 +32,8 @@ namespace FileIO
                     ClassInfo output = new ClassInfo();
                     UsingAdder(code, output);
                     ReadUntilNextMatchingBrace(code, output);
-                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
+                    if (output.Name != null && output.Namespace != null)
+                        Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }
@@ -118,16 +119,16 @@ namespace FileIO
             {
                 foreach (string d in dataTypes)
                 {
-                    var methodNaam = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
-                    if (s.Contains(d) && methodNaam.Contains("("))
-                        output.Methods.Add(methodNaam);
+                    var method = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0];
+                    if (s.Contains($"{d} ") && method.Contains("("))
+                        output.Methods.Add(method);
                 }
                 // check of lukt!!!!!!!!!!!!!!!!!!!!
                 foreach (string d in methodReturnTypes)
                 {
-                    var methodNaam = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(chars, StringSplitOptions.None)[0];
-                    if (s.Contains(d) && methodNaam.Contains("(")) // (!c.Contains($"{c}(") || !c.Contains($"{c} ("))
-                        output.Methods.Add(methodNaam);
+                    var method = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0];
+                    if (s.Contains($"{d} ") && method.Contains("("))
+                        output.Methods.Add(method);
                 }
             }
         }
@@ -152,7 +153,7 @@ namespace FileIO
             {
                 foreach (string d in dataTypes)
                 {
-                    if (s.Contains(d))
+                    if (s.Contains($"{d} "))
                     {
                         var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
                         foreach (string c in code)
@@ -164,7 +165,7 @@ namespace FileIO
                 }
                 foreach (string d in classDataTypes)
                 {
-                    if (s.Contains(d))
+                    if (s.Contains($"{d} "))
                     {
                         var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
                         foreach (string c in code)
@@ -180,7 +181,7 @@ namespace FileIO
         {
             foreach (string d in dataTypes)
             {
-                if (s.Contains(d))
+                if (s.Contains($"{d} "))
                 {
                     var code = s.Trim().Split(new char[] { ':', ';', '}' }, StringSplitOptions.None);
                     foreach(string c in code)
@@ -192,7 +193,7 @@ namespace FileIO
             }
             foreach (string d in classDataTypes)
             {
-                if (s.Contains(d))
+                if (s.Contains($"{d} "))
                 {
                     var code = s.Trim().Split(new char[] { ':', ';', '}' }, StringSplitOptions.None);
                     foreach (string c in code)

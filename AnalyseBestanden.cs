@@ -26,7 +26,7 @@ namespace FileIO
                     BestandInfo output = new BestandInfo();
                     CheckStringsAndAnalyse(File.ReadAllLines(f), output);
                     if (output.Name != null && output.Namespace != null)
-                    Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
+                        Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
                 }
             }
         }

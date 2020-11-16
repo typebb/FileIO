@@ -8,22 +8,22 @@ namespace FileIO
     {
         public string Name { get; set; }
         public string Namespace { get; set; }
-        public List<string> Constructors { get; set; } = new List<string>();
-        public List<string> Methods { get; set; } = new List<string>();
-        public List<string> Inherits { get; set; } = new List<string>();
-        public List<string> Usings { get; set; } = new List<string>();
-        public List<string> Properties { get; set; } = new List<string>();
-        public List<string> Variables { get; set; } = new List<string>();
+        public HashSet<string> Constructors { get; set; } = new HashSet<string>();
+        public HashSet<string> Methods { get; set; } = new HashSet<string>();
+        public HashSet<string> Inherits { get; set; } = new HashSet<string>();
+        public HashSet<string> Usings { get; set; } = new HashSet<string>();
+        public HashSet<string> Properties { get; set; } = new HashSet<string>();
+        public HashSet<string> Variables { get; set; } = new HashSet<string>();
         public override string ToString()
         {
             StringBuilder returnString = new StringBuilder();
             returnString.Append($"{Namespace},{Name}\n");
-            foreach (string s in Usings) returnString.Append($"Using : {s}\n");
-            foreach (string s in Inherits) returnString.Append($"Inherit : {s}\n");
-            foreach (string s in Constructors) returnString.Append($"Constructor : {s}\n");
-            foreach (string s in Methods) returnString.Append($"Method : {s}\n");
-            foreach (string s in Properties) returnString.Append($"Property : {s}\n");
-            foreach (string s in Variables) returnString.Append($"Variable : {s}\n");
+            foreach (string s in Usings) if (s != "") returnString.Append($"Using : {s}\n");
+            foreach (string s in Inherits) if (s != "") returnString.Append($"Inherit : {s}\n");
+            foreach (string s in Constructors) if (s != "") returnString.Append($"Constructor : {s}\n");
+            foreach (string s in Methods) if (s != "") returnString.Append($"Method : {s}\n");
+            foreach (string s in Properties) if (s != "") returnString.Append($"Property : {s}\n");
+            foreach (string s in Variables) if (s != "") returnString.Append($"Variable : {s}\n");
             returnString.Append("_______________________\n");
             return returnString.ToString();
         }
