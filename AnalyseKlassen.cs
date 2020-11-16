@@ -79,7 +79,7 @@ namespace FileIO
                 code = code[0].Split(new char[] { ';'}, StringSplitOptions.None);
                 foreach(string u in code)
                 {
-                    if (!u.Contains("namespace"))
+                    if (u.Contains("using "))
                         output.Usings.Add(u.Substring(s.IndexOf("using") + 6).Trim());
                 }
             }
@@ -123,7 +123,6 @@ namespace FileIO
                     if (s.Contains($"{d} ") && method.Contains("("))
                         output.Methods.Add(method);
                 }
-                // check of lukt!!!!!!!!!!!!!!!!!!!!
                 foreach (string d in methodReturnTypes)
                 {
                     var method = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0];

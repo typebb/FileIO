@@ -22,50 +22,65 @@ namespace FileIO
             {
                 if (f.Contains(".cs"))
                 {
-                    //string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
+                    string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
                     BestandInfo output = new BestandInfo();
-                    CheckStringsAndAnalyse(File.ReadAllLines(f), output);
+                    NamespaceAdder(code, output);
+                    ReadUntilNextMatchingBrace(code, output);
                     if (output.Name != null && output.Namespace != null)
+                    {
+                        CodeTeller(f, output);
                         Output.WriteOutputToFile(Path.GetFileNameWithoutExtension(folderPath), output);
+                    }
                 }
             }
         }
-        public void CheckStringsAndAnalyse(string[] lijnen, BestandInfo output)
+        public void ReadUntilNextMatchingBrace(string code, BestandInfo output)
         {
             int tellerKlassen = 0;
-            int tellerLijnenCode = 0;
-            foreach (string s in lijnen)
+            int nOpen = 0;
+            int indexOpen;
+            int indexClose;
+            do
             {
-                TellerClassesEnLijnen(s, output, ref tellerKlassen, ref tellerLijnenCode);
-                if (ClassAdder(s, output) != null) output.Name = ClassAdder(s, output);
-                if (NamespaceAdder(s) != null) output.Namespace = NamespaceAdder(s);
+                indexOpen = code.IndexOf("{");
+                if (indexOpen == -1) indexOpen = code.Length;
+                indexClose = code.IndexOf("}");
+                if (indexOpen < indexClose)
+                {
+                    nOpen++;
+                    code = code.Substring(indexOpen + 1);
+                }
+                if (indexOpen > indexClose)
+                {
+                    nOpen--;
+                    code = code.Substring(indexClose + 1);
+                }
+                CheckStringsAndAnalyse(code, output, ref tellerKlassen);
             }
+            while (nOpen > 0);
         }
-        public void TellerClassesEnLijnen(string s, BestandInfo output, ref int tellerKlassen, ref int tellerLijnenCode)
+        public void CheckStringsAndAnalyse(string s, BestandInfo output, ref int tellerKlassen)
         {
             KlassenTeller(s, ref tellerKlassen);
-            CodeTeller(s, ref tellerLijnenCode);
-            output.AantalLijnenCode = tellerLijnenCode;
+            ClassAdder(s, output);
         }
-        public string NamespaceAdder(string s)
+        public void NamespaceAdder(string s, BestandInfo output)
         {
             if (s.Contains("namespace "))
-                return s.Substring(s.IndexOf("namespace") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
-            return null;
+                output.Namespace = s.Substring(s.IndexOf("namespace") + 10).Trim().Split(new char[] { '{' }, StringSplitOptions.None)[0];
         }
-        public string ClassAdder(string s, BestandInfo output)
+        public void ClassAdder(string s, BestandInfo output)
         {
             if (s.Contains(" class "))
             {
                 TypeOffClass(s, output);
-                return s.Substring(s.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
+                output.Name = s.Substring(s.IndexOf("class") + 6).Trim().Split(chars, StringSplitOptions.None)[0];
             }
             else if (s.Contains(" interface "))
             {
                 TypeOffClass(s, output);
-                return s.Substring(s.IndexOf("interface") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
+                output.Name = s.Substring(s.IndexOf("interface") + 10).Trim().Split(chars, StringSplitOptions.None)[0];
             }
-            return null;
         }
         public void TypeOffClass(string s, BestandInfo output)
         {
@@ -86,10 +101,15 @@ namespace FileIO
             if (s.Contains(" class ") || s.Contains(" interface "))
                 teller++;
         }
-        public void CodeTeller(string s, ref int teller)
+        public void CodeTeller(string path, BestandInfo output)
         {
-            if (s.Trim().Length > 0)
-                teller++;
+            int teller = 0;
+            foreach (string s in File.ReadAllLines(path))
+            {
+                if (s.Trim().Length > 0)
+                    teller++;
+            }
+            output.AantalLijnenCode = teller;
         }
     }
 }
