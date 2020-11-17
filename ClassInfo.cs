@@ -8,6 +8,7 @@ namespace FileIO
     {
         public string Name { get; set; }
         public string Namespace { get; set; }
+        public string FirstMethod { get; set; }
         public HashSet<string> Constructors { get; set; } = new HashSet<string>();
         public HashSet<string> Methods { get; set; } = new HashSet<string>();
         public HashSet<string> Inherits { get; set; } = new HashSet<string>();
