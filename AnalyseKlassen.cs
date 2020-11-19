@@ -8,8 +8,6 @@ namespace FileIO
     {
         public List<string> dataTypes = new List<string> { "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
         public List<string> methodReturnTypes = new List<string> { "void", "bool", "byte", "char", "decimal", "double", "enum", "float", "int", "long", "sbyte", "short", "string", "struct", "uint", "ulong", "ushort" };
-
-        public List<string> classDataTypes = new List<string>();
         public char[] chars = new char[] { ' ', ':', ';', '{', '}', '=' };
         public Input Input { get; set; } = new Input();
         public OutputClass Output { get; set; } = new OutputClass();
@@ -69,7 +67,6 @@ namespace FileIO
             ConstructorAdder(s, output);
             MethodAdder(s, ref output);
             PropertyAdder(s, output);
-            //VariableAdder(s, output);
         }
         public void UsingAdder(string s, ClassInfo output)
         {
@@ -118,34 +115,18 @@ namespace FileIO
         {
             if (s.Contains("(") && s.Contains(")"))
             {
-                foreach (string d in dataTypes)
+                foreach (string m in methodReturnTypes)
                 {
-                    var method = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0];
+                    string d = $" {m.Trim()} ";
+                    var method = s.Substring(s.IndexOf(d) + d.Length).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0];
                     var methodPuntCheck = s.Substring(s.IndexOf(d) + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=', '(', ')' }, StringSplitOptions.None)[0];
-                    if (s.Contains($"{d} ") && !methodPuntCheck.Contains(".") && method.Contains("(") && !method.Contains(">"))
+                    if (s.Contains($"{d}") && !methodPuntCheck.Contains(".") && method.Contains("(") && !method.Contains(">") && !method.StartsWith("("))
                     {
                         output.Methods.Add(method.Trim());
                         if (output.FirstMethod == null)
                             output.FirstMethod = method.Trim();
                     }
-                    if (s.Contains($"{d} ") && !methodPuntCheck.Contains(".") && method.Contains("(") && method.Contains(">"))
-                    {
-                        output.Methods.Add(method.Substring(method.IndexOf(">") + 2).Trim());
-                        if (output.FirstMethod == null)
-                            output.FirstMethod = method.Substring(method.IndexOf(">") + 2).Trim();
-                    }
-                }
-                foreach (string d in methodReturnTypes)
-                {
-                    var method = s.Substring(s.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0];
-                    var methodPuntCheck = s.Substring(s.IndexOf(d) + 1).Trim().Split(new char[] { ':', ';', '{', '}', '=', '(', ')' }, StringSplitOptions.None)[0];
-                    if (s.Contains($"{d} ") && !methodPuntCheck.Contains(".") && method.Contains("(") && !method.Contains(">"))
-                    {
-                        output.Methods.Add(method.Trim());
-                        if (output.FirstMethod == null)
-                            output.FirstMethod = method.Trim();
-                    }
-                    if (s.Contains($"{d} ") && !methodPuntCheck.Contains(".") && method.Contains("(") && method.Contains(">"))
+                    if (s.Contains($"{m.Trim()}") && !methodPuntCheck.Contains(".") && method.Contains("(") && method.Contains(">"))
                     {
                         output.Methods.Add(method.Substring(method.IndexOf(">") + 2).Trim());
                         if (output.FirstMethod == null)
@@ -187,41 +168,18 @@ namespace FileIO
                         }
                     }
                 }
-                foreach (string d in classDataTypes)
-                {
-                    if (s.Contains($"{d} "))
-                    {
-                        var code = s.Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None);
-                        foreach (string c in code)
-                        {
-                            if (c.Contains($" {d} ") && !c.Contains($"( {d}") && (!c.Contains($",{d}") || !c.Contains($", {d}")) && (c.Contains("get") || c.Contains("set")))
-                                output.Properties.Add(c.Substring(c.IndexOf(d) + d.Length + 1).Trim().Split(new char[] { ':', ';', '=', '{', '}', ')' }, StringSplitOptions.None)[0]);
-                        }
-                    }
-                }
             }
         }
         public void VariableAdder(string code, ClassInfo output)
         {
             if (output.FirstMethod != null)
               code = code.Remove(code.IndexOf(output.FirstMethod));
-            var v = code.Trim().Split(new char[] { ':', ';', '}', ')' }, StringSplitOptions.None);
+            var splitVars = code.Trim().Split(new char[] { ':', ';', '}', ')' }, StringSplitOptions.None);
             foreach (string d in dataTypes)
             {
-                foreach (string s in v)
+                foreach (string s in splitVars)
                 {
-                    if (s.Contains($" {d} ") && !s.Contains(">") && (s.Substring(s.IndexOf(d) + d.Length) != "=") && !s.Contains("{") && !s.Contains("(") && (!s.Contains($"({d}") || !s.Contains($"( {d}")) && (!s.Contains($",{d}") || !s.Contains($", {d}")) && (!s.Contains("get") || !s.Contains("set")))
-                    {
-                        var variableToAdd = s.Substring(s.IndexOf($"{d} ") + $"{d} ".Length).Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None)[0];
-                        output.Variables.Add(variableToAdd);
-                    }
-                }
-            }
-            foreach (string d in classDataTypes)
-            {
-                foreach (string s in v)
-                {
-                    if (s.Contains($" {d} ") && !s.Contains(">") && (s.Substring(s.IndexOf(d) + d.Length) != "=") && !s.Contains("{") && !s.Contains("(") && (!s.Contains($"({d}") || !s.Contains($"( {d}")) && (!s.Contains($",{d}") || !s.Contains($", {d}")) && (!s.Contains("get") || !s.Contains("set")))
+                    if (s.Contains($" {d} ") && !s.Contains(">") && !s.Contains("{") && !s.Contains("(") && (!s.Contains($"({d}") || !s.Contains($"( {d}")) && (!s.Contains($",{d}") || !s.Contains($", {d}")) && (!s.Contains("get") || !s.Contains("set")))
                     {
                         var variableToAdd = s.Substring(s.IndexOf($"{d} ") + $"{d} ".Length).Trim().Split(new char[] { ':', ';', '=', '}', ')' }, StringSplitOptions.None)[0];
                         output.Variables.Add(variableToAdd);
@@ -236,9 +194,10 @@ namespace FileIO
                 if (f.Contains(".cs"))
                 {
                     string code = File.ReadAllText(f).Replace('\r', ' ').Replace('\n', ' ');
-                    if (code.Contains(" class ") && !code.Contains(" abstract "))
+                    if (code.Contains(" class "))
                     {
-                        classDataTypes.Add(code.Substring(code.IndexOf(" class ") + 6).Trim().Split(chars, StringSplitOptions.None)[0]);
+                        dataTypes.Add(code.Substring(code.IndexOf(" class ") + 7).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0]);
+                        methodReturnTypes.Add(code.Substring(code.IndexOf(" class ") + 7).Trim().Split(new char[] { ':', ';', '{', '}', '=' }, StringSplitOptions.None)[0]);
                     }
                 }
             }
